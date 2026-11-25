@@ -1333,7 +1333,7 @@ SonobusAudioProcessorEditor::SonobusAudioProcessorEditor (SonobusAudioProcessor&
 #endif
 
         // look for link in clipboard        
-        if (mConnectView->attemptToPasteConnectionFromClipboard()) {
+        if (mConnectView->attemptToPasteConnectionFromClipboard(currConnectionInfo)) {
             // show connect immediately
             showConnectPopup(true);
             // switch to group page
@@ -2821,7 +2821,7 @@ void SonobusAudioProcessorEditor::handleURL(const String & urlstr)
     URL url(urlstr);
     if (url.isWellFormed()) {
         if (!currConnected || currGroup.isEmpty()) {
-            if (mConnectView->handleSonobusURL(url)) {
+            if (mConnectView->handleSonobusURL(url, currConnectionInfo)) {
 
                 // connect immediately
                 connectWithInfo(currConnectionInfo);
@@ -6040,4 +6040,3 @@ void SonobusAudioProcessorEditor::SonobusMenuBarModel::menuItemSelected (int men
     }
 #endif
 }
-

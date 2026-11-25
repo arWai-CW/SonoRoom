@@ -65,9 +65,9 @@ public:
 
     void connectWithInfo(const AooServerConnectionInfo & info, bool allowEmptyGroup = false);
 
-    bool handleSonobusURL(const URL & url);
+    bool handleSonobusURL(const URL & url, AooServerConnectionInfo& info);
 
-    bool attemptToPasteConnectionFromClipboard();
+    bool attemptToPasteConnectionFromClipboard(AooServerConnectionInfo& info);
     bool copyInfoToClipboard(bool singleURL=false, String * retmessage = nullptr);
 
     void showActiveGroupTab();
@@ -96,6 +96,7 @@ protected:
     bool readLobbyConnectionInfo(AooServerConnectionInfo& info);
     bool hasLobbySession(const AooServerConnectionInfo& info) const;
     void joinLobbyRoom(AooServerConnectionInfo info);
+    void updatePrivateServerFields(const AooServerConnectionInfo& info);
     void showAdvancedMenu();
 
 

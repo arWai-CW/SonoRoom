@@ -884,11 +884,20 @@ void ConnectView::joinLobbyRoom(AooServerConnectionInfo info)
     processor.joinServerGroup(info.groupName, info.groupPassword, info.groupIsPublic);
 }
 
+static String connectionHostText(const AooServerConnectionInfo& info)
+{
+    String host = info.serverHost;
+    if (info.serverPort != DEFAULT_SERVER_PORT)
+        host << ":" << info.serverPort;
+    return host;
+}
+
 bool ConnectView::copyInfoToClipboard(bool singleURL, String * retmessage)
 {
     String message = TRANS("Share this link with others to connect with SonoBus:") + " \n";
 
-    String hostport = mServerHostEditor->getText();
+    const bool connected = processor.isConnectedToServer();
+    String hostport = connected ? connectionHostText(currConnectionInfo) : mServerHostEditor->getText();
     if (hostport.isEmpty()) {
         hostport = DEFAULT_SERVER_HOST;
     }
@@ -896,7 +905,7 @@ bool ConnectView::copyInfoToClipboard(bool singleURL, String * retmessage)
     String groupName;
     String groupPassword;
 
-    if (!processor.isConnectedToServer()) {
+    if (!connected) {
         if (mConnectTab->getCurrentContentComponent() == mServerConnectViewport.get()) {
             groupName = mServerGroupEditor->getText().trim();
             groupPassword = mServerGroupPasswordEditor->getText();
@@ -923,7 +932,7 @@ bool ConnectView::copyInfoToClipboard(bool singleURL, String * retmessage)
             url2 = url2.withParameter("p", groupPassword);
         }
 
-        if (processor.isConnectedToServer() && currConnectionInfo.groupIsPublic) {
+        if (connected && currConnectionInfo.groupIsPublic) {
             url = url.withParameter("public", "1");
             url2 = url2.withParameter("public", "1");
         }
@@ -1097,11 +1106,9 @@ void ConnectView::buttonClicked (Button* buttonThatWasClicked)
         joinLobbyRoom(info);
     }
     else if (buttonThatWasClicked == mServerGroupPasswordShowButton.get()) {
-        mServerGroupPasswordShowButton->setToggleState(!mServerGroupPasswordShowButton->getToggleState(), dontSendNotification);
-        currConnectionInfo.userName = mServerUsernameEditor->getText().trim();
-        currConnectionInfo.groupName = mServerGroupEditor->getText().trim();
-        currConnectionInfo.groupPassword = mServerGroupPasswordEditor->getText();
-        updateState();
+        const bool showPassword = !mServerGroupPasswordShowButton->getToggleState();
+        mServerGroupPasswordShowButton->setToggleState(showPassword, dontSendNotification);
+        mServerGroupPasswordEditor->setPasswordCharacter(showPassword ? 0 : 0x2022);
     }
     else if (buttonThatWasClicked == mServerGroupRandomButton.get()) {
         // randomize group name
@@ -1109,8 +1116,10 @@ void ConnectView::buttonClicked (Button* buttonThatWasClicked)
         mServerGroupEditor->setText(rgroup, dontSendNotification);
     }
     else if (buttonThatWasClicked == mServerPasteButton.get()) {
-        if (attemptToPasteConnectionFromClipboard()) {
-            updateServerFieldsFromConnectionInfo();
+        auto privateInfo = currConnectionInfo;
+        if (attemptToPasteConnectionFromClipboard(privateInfo)) {
+            privateInfo.groupIsPublic = false;
+            updatePrivateServerFields(privateInfo);
             updateServerStatusLabel(TRANS("Filled in Group information from clipboard! Press 'Connect to Group' to join..."), false);
         }
     }
@@ -1328,7 +1337,7 @@ void ConnectView::resetPrivateGroupLabels()
 }
 
 
-bool ConnectView::attemptToPasteConnectionFromClipboard()
+bool ConnectView::attemptToPasteConnectionFromClipboard(AooServerConnectionInfo& info)
 {
     auto clip = SystemClipboard::getTextFromClipboard();
 
@@ -1347,7 +1356,7 @@ bool ConnectView::attemptToPasteConnectionFromClipboard()
                 // clear clipboard
                 SystemClipboard::copyTextToClipboard("");
 
-                return handleSonobusURL(url);
+                return handleSonobusURL(url, info);
             }
         }
         else {
@@ -1365,7 +1374,7 @@ bool ConnectView::attemptToPasteConnectionFromClipboard()
 
                     SystemClipboard::copyTextToClipboard("");
 
-                    return handleSonobusURL(url);
+                    return handleSonobusURL(url, info);
                 }
             }
         }
@@ -1374,7 +1383,7 @@ bool ConnectView::attemptToPasteConnectionFromClipboard()
     return false;
 }
 
-bool ConnectView::handleSonobusURL(const URL & url)
+bool ConnectView::handleSonobusURL(const URL & url, AooServerConnectionInfo& info)
 {
     // look for either  http://go.sonobus.net/sblaunch?  style url
     // or sonobus://host:port/? style
@@ -1384,18 +1393,18 @@ bool ConnectView::handleSonobusURL(const URL & url)
 
     int ind;
     if ((ind = pnames.indexOf("g", true)) >= 0) {
-        currConnectionInfo.groupName = pvals[ind];
+        info.groupName = pvals[ind];
 
         if ((ind = pnames.indexOf("p", true)) >= 0) {
-            currConnectionInfo.groupPassword = pvals[ind];
+            info.groupPassword = pvals[ind];
         } else {
-            currConnectionInfo.groupPassword = "";
+            info.groupPassword = "";
         }
 
         if ((ind = pnames.indexOf("public", true)) >= 0) {
-            currConnectionInfo.groupIsPublic = pvals[ind].getIntValue() > 0;
+            info.groupIsPublic = pvals[ind].getIntValue() > 0;
         } else {
-            currConnectionInfo.groupIsPublic = false;
+            info.groupIsPublic = false;
         }
 
     }
@@ -1403,24 +1412,24 @@ bool ConnectView::handleSonobusURL(const URL & url)
     if (url.getScheme() == "sonobus") {
         // use domain part as host:port
         String hostpart = url.getDomain();
-        currConnectionInfo.serverHost =  hostpart.upToFirstOccurrenceOf(":", false, true);
+        info.serverHost =  hostpart.upToFirstOccurrenceOf(":", false, true);
         int port = url.getPort();
         if (port > 0) {
-            currConnectionInfo.serverPort = port;
+            info.serverPort = port;
         } else {
-            currConnectionInfo.serverPort = DEFAULT_SERVER_PORT;
+            info.serverPort = DEFAULT_SERVER_PORT;
         }
     }
     else {
         if ((ind = pnames.indexOf("s", true)) >= 0) {
             String hostpart = pvals[ind];
-            currConnectionInfo.serverHost =  hostpart.upToFirstOccurrenceOf(":", false, true);
+            info.serverHost =  hostpart.upToFirstOccurrenceOf(":", false, true);
             String portpart = hostpart.fromFirstOccurrenceOf(":", false, false);
             int port = portpart.getIntValue();
             if (port > 0) {
-                currConnectionInfo.serverPort = port;
+                info.serverPort = port;
             } else {
-                currConnectionInfo.serverPort = DEFAULT_SERVER_PORT;
+                info.serverPort = DEFAULT_SERVER_PORT;
             }
         }
     }
@@ -1448,27 +1457,23 @@ void ConnectView::updateServerStatusLabel(const String & mesg, bool mainonly)
 
 void ConnectView::updateServerFieldsFromConnectionInfo()
 {
-    if (currConnectionInfo.serverPort == DEFAULT_SERVER_PORT) {
-        mServerHostEditor->setText( currConnectionInfo.serverHost, false);
-        mPublicServerHostEditor->setText( currConnectionInfo.serverHost, false);
-    } else {
-        String hostport;
-        hostport << currConnectionInfo.serverHost << ":" << currConnectionInfo.serverPort;
-        mServerHostEditor->setText( hostport, false);
-        mPublicServerHostEditor->setText( hostport, false);
-    }
-    mServerUsernameEditor->setText(currConnectionInfo.userName, false);
+    updatePrivateServerFields(currConnectionInfo);
+    mPublicServerHostEditor->setText(connectionHostText(currConnectionInfo), false);
     mPublicServerUsernameEditor->setText(currConnectionInfo.userName, false);
     if (currConnectionInfo.groupIsPublic) {
         mPublicServerGroupEditor->setText(currConnectionInfo.groupName, false);
-    } else if (currConnectionInfo.groupName.isNotEmpty()){
-        mServerGroupEditor->setText(currConnectionInfo.groupName, false);
     }
+}
 
+void ConnectView::updatePrivateServerFields(const AooServerConnectionInfo& info)
+{
+    mServerHostEditor->setText(connectionHostText(info), false);
+    mServerUsernameEditor->setText(info.userName, false);
+    if (!info.groupIsPublic && info.groupName.isNotEmpty()) {
+        mServerGroupEditor->setText(info.groupName, false);
+    }
     mServerGroupPasswordEditor->setPasswordCharacter(mServerGroupPasswordShowButton->getToggleState() ? 0 : 0x2022); // bullet if not showing password
-    
-    mServerGroupPasswordEditor->setText(currConnectionInfo.groupPassword, false);
-
+    mServerGroupPasswordEditor->setText(info.groupPassword, false);
 }
 
 void ConnectView::showPopTip(const String & message, int timeoutMs, Component * target, int maxwidth)
