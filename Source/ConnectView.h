@@ -93,6 +93,9 @@ protected:
     void configServerLabel(Label *label);
 
     void publicGroupLogin();
+    bool readLobbyConnectionInfo(AooServerConnectionInfo& info);
+    bool hasLobbySession(const AooServerConnectionInfo& info) const;
+    void joinLobbyRoom(AooServerConnectionInfo info);
     void showAdvancedMenu();
 
 
@@ -101,6 +104,7 @@ protected:
     ListenerList<Listener> listeners;
 
     AooServerConnectionInfo & currConnectionInfo;
+    unsigned int connectRequestId = 0;
     bool currConnected = false;
 
     bool firstTimeConnectShow = true;
@@ -126,9 +130,11 @@ protected:
     std::unique_ptr<Label> mPublicServerStatusInfoLabel;
     std::unique_ptr<Label> mPublicServerUserStaticLabel;
     std::unique_ptr<GroupComponent> mPublicGroupComponent;
-    std::unique_ptr<Label> mPublicServerInfoStaticLabel;
+    std::unique_ptr<TextButton> mLobbySignInButton;
+    std::unique_ptr<TextButton> mQuickMatchButton;
     std::unique_ptr<TextButton> mPublicServerAddGroupButton;
     std::unique_ptr<TextEditor> mPublicServerGroupEditor;
+    std::unique_ptr<TextEditor> mLobbyRoomPasswordEditor;
 
 
     std::unique_ptr<Label> mServerUserStaticLabel;
@@ -220,6 +226,7 @@ protected:
         void returnKeyPressed (int) override;
 
         void updateState();
+        bool quickMatch();
 
     protected:
         ConnectView * parent;
@@ -227,9 +234,6 @@ protected:
         void groupSelected(int rowsel);
 
         Image groupImage;
-        Image personImage;
-
-        int cachedWidth = 0;
 
         Array<AooPublicGroupInfo> groups;
     };
