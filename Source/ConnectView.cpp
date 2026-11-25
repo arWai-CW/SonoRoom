@@ -304,7 +304,7 @@ publicGroupsListModel(this)
     mPublicServerUsernameEditor->setText(processor.getCurrentUsername(), false);
     configEditor(mPublicServerUsernameEditor.get());
 
-    mPublicGroupComponent = std::make_unique<GroupComponent>("", TRANS("Public Rooms — Click to Join"));
+    mPublicGroupComponent = std::make_unique<GroupComponent>("", TRANS("Public Rooms - Click to Join"));
     mPublicGroupComponent->setColour(GroupComponent::textColourId, Colour::fromFloatRGBA(0.8, 0.8, 0.8, 0.8));
     mPublicGroupComponent->setColour(GroupComponent::outlineColourId, Colour::fromFloatRGBA(0.8, 0.8, 0.8, 0.1));
     mPublicGroupComponent->setTextLabelPosition(Justification::centred);
@@ -873,7 +873,7 @@ void ConnectView::publicGroupLogin()
         }
         mPublicServerStatusInfoLabel->setText(TRANS("Signed in. Select a room or use Quick Match."), dontSendNotification);
     } else {
-        mPublicServerStatusInfoLabel->setText(TRANS("Signing in…"), dontSendNotification);
+        mPublicServerStatusInfoLabel->setText(TRANS("Signing in..."), dontSendNotification);
         connectWithInfo(info, true);
     }
     updatePublicGroups();
