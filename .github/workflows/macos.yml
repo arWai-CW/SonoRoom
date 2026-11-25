@@ -26,7 +26,11 @@ jobs:
           codesign --verify --deep --strict "$app"
           mkdir dist
           ditto -c -k --keepParent "$app" dist/SonoRoom-mac.zip
-          hdiutil create -srcfolder "$app" -volname SonoRoom -format UDZO dist/SonoRoom-mac.dmg
+          stage=$(mktemp -d)
+          trap 'rm -rf "$stage"' EXIT
+          ditto "$app" "$stage/SonoRoom.app"
+          ln -s /Applications "$stage/Applications"
+          hdiutil create -srcfolder "$stage" -volname SonoRoom -format UDZO dist/SonoRoom-mac.dmg
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: SonoRoom-mac-universal
