@@ -62,11 +62,9 @@ void LatestVersionCheckerAndUpdater::run()
     if (info == nullptr)
     {
         if (showAlertWindows)
-            AlertWindow::showMessageBoxAsync (AlertWindow::WarningIcon,
-                                              "Update Server Communication Error",
-                                              "Failed to communicate with the SonoBus update server.\n"
-                                              "Please try again in a few minutes.\n\n"
-                                              "If this problem persists you can download the latest version of SonoBus from sonobus.net");
+            AlertWindow::showMessageBoxAsync (AlertWindow::InfoIcon,
+                                              "SonoRoom Updates",
+                                              "Download new versions from https://github.com/arWai-CW/SonoRoom/releases");
 
         return;
     }
@@ -76,29 +74,14 @@ void LatestVersionCheckerAndUpdater::run()
         if (showAlertWindows)
             AlertWindow::showMessageBoxAsync (AlertWindow::InfoIcon,
                                               "No New Version Available",
-                                              "Your SonoBus version is up to date.");
+                                              "Your SonoRoom version is up to date.");
         return;
     }
 
-    auto osString = []
-    {
-       #if JUCE_MAC
-        return "mac";
-       #elif JUCE_WINDOWS
-        return "win";
-       #elif JUCE_LINUX
-        return "linux";
-       #else
-        jassertfalse;
-        return "Unknown";
-       #endif
-    }();
-
-    String requiredFilename ("sonobus-" + info->versionString + "-" + osString + "."); // to end with any extension
-
+   #if JUCE_MAC
     for (auto& asset : info->assets)
     {
-        if (asset.name.startsWith(requiredFilename))
+        if (asset.name == "SonoRoom-mac.dmg")
         {
             auto versionString = info->versionString;
             auto releaseNotes  = info->releaseNotes;
@@ -111,11 +94,12 @@ void LatestVersionCheckerAndUpdater::run()
             return;
         }
     }
+   #endif
 
     if (showAlertWindows)
-        AlertWindow::showMessageBoxAsync (AlertWindow::WarningIcon,
-                                          "Failed to find any new downloads",
-                                          "Please try again in a few minutes.");
+        AlertWindow::showMessageBoxAsync (AlertWindow::InfoIcon,
+                                          "SonoRoom Updates",
+                                          "SonoRoom " + info->versionString + " is available. See https://github.com/arWai-CW/SonoRoom/releases");
 }
 
 //==============================================================================
@@ -124,12 +108,12 @@ class UpdateDialog  : public Component
 public:
     UpdateDialog (const String& newVersion, const String& releaseNotes)
     {
-        titleLabel.setText ("SonoBus version " + newVersion, dontSendNotification);
+        titleLabel.setText ("SonoRoom version " + newVersion, dontSendNotification);
         titleLabel.setFont ({ 15.0f, Font::bold });
         titleLabel.setJustificationType (Justification::centred);
         addAndMakeVisible (titleLabel);
 
-        contentLabel.setText ("A new version of SonoBus is available - would you like to download it?", dontSendNotification);
+        contentLabel.setText ("A new version of SonoRoom is available - would you like to download it?", dontSendNotification);
         contentLabel.setFont (15.0f);
         contentLabel.setJustificationType (Justification::topLeft);
         addAndMakeVisible (contentLabel);

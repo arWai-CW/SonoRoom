@@ -7,7 +7,7 @@
 
 std::unique_ptr<VersionInfo> VersionInfo::fetchFromUpdateServer (const String& versionString)
 {
-    return fetch ("tags/" + versionString);
+    return fetch ("tags/v" + versionString);
 }
 
 std::unique_ptr<VersionInfo> VersionInfo::fetchLatestFromUpdateServer()
@@ -18,18 +18,8 @@ std::unique_ptr<VersionInfo> VersionInfo::fetchLatestFromUpdateServer()
 std::unique_ptr<InputStream> VersionInfo::createInputStreamForAsset (const Asset& asset, int& statusCode)
 {
     URL downloadUrl (asset.url);
-    StringPairArray responseHeaders;
-    String extraHeaders;   
-    extraHeaders += "Accept: application/octet-stream\r\n";
-    
-    String authuserpass = SystemStats::getEnvironmentVariable("GITUSERPASS", "");    
-    if (authuserpass.isNotEmpty()) {
-        extraHeaders += "Authorization: Basic " + Base64::toBase64(authuserpass) + "\r\n";
-    }
-    
-    ;
-    
-    return std::unique_ptr<InputStream> (downloadUrl.createInputStream (URL::InputStreamOptions(URL::ParameterHandling::inAddress).withExtraHeaders(extraHeaders).withResponseHeaders(&responseHeaders).withStatusCode(&statusCode).withNumRedirectsToFollow(1)));
+    return downloadUrl.createInputStream (URL::InputStreamOptions (URL::ParameterHandling::inAddress)
+                                              .withStatusCode (&statusCode));
 }
 
 bool VersionInfo::isNewerVersionThanCurrent()
@@ -67,54 +57,40 @@ bool VersionInfo::isNewerVersionThanCurrent()
 
 std::unique_ptr<VersionInfo> VersionInfo::fetch (const String& endpoint)
 {
-    URL latestVersionURL ("https://api.github.com/repos/sonosaurus/sonobus/releases/" + endpoint);
-    String extraHeaders;      
-    String authuserpass = SystemStats::getEnvironmentVariable("GITUSERPASS", "");
-    
-    if (authuserpass.isNotEmpty()) {
-        extraHeaders = "Authorization: Basic " + Base64::toBase64(authuserpass) + "\r\n";
-    }
-
-    std::unique_ptr<InputStream> inStream (latestVersionURL.createInputStream (URL::InputStreamOptions(URL::ParameterHandling::inAddress).withExtraHeaders(extraHeaders)));
-
-    if (inStream == nullptr)
+    const URL releaseUrl ("https://api.github.com/repos/arWai-CW/SonoRoom/releases/" + endpoint);
+    int statusCode = 0;
+    auto stream = releaseUrl.createInputStream (URL::InputStreamOptions (URL::ParameterHandling::inAddress)
+                                                   .withExtraHeaders ("User-Agent: SonoRoom\r\nAccept: application/vnd.github+json\r\n")
+                                                   .withConnectionTimeoutMs (5000)
+                                                   .withStatusCode (&statusCode));
+    if (stream == nullptr || statusCode != 200)
         return nullptr;
 
-    auto content = inStream->readEntireStreamAsString();
-    auto latestReleaseDetails = JSON::parse (content);
-
-    auto* json = latestReleaseDetails.getDynamicObject();
-
-    if (json == nullptr)
+    const auto release = JSON::parse (stream->readEntireStreamAsString());
+    auto* details = release.getDynamicObject();
+    if (details == nullptr)
         return nullptr;
 
-    auto versionString = json->getProperty ("tag_name").toString();
-
-    if (versionString.isEmpty())
+    const auto tag = details->getProperty ("tag_name").toString();
+    if (! tag.startsWithChar ('v'))
         return nullptr;
 
-    auto* assets = json->getProperty ("assets").getArray();
-
-    if (assets == nullptr)
+    const auto version = tag.substring (1);
+    const auto parts = StringArray::fromTokens (version, ".", {});
+    if (parts.size() != 3)
         return nullptr;
 
-    auto releaseNotes = json->getProperty ("body").toString();
-    std::vector<VersionInfo::Asset> parsedAssets;
+    for (const auto& part : parts)
+        if (part.isEmpty() || ! part.containsOnly ("0123456789"))
+            return nullptr;
 
-    for (auto& asset : *assets)
-    {
-        if (auto* assetJson = asset.getDynamicObject())
-        {
-            parsedAssets.push_back ({ assetJson->getProperty ("name").toString(),
-                                      assetJson->getProperty ("url").toString() });
-            jassert (parsedAssets.back().name.isNotEmpty());
-            jassert (parsedAssets.back().url.isNotEmpty());
-        }
-        else
-        {
-            jassertfalse;
-        }
-    }
+    std::vector<Asset> assets;
+    const auto releaseAssets = details->getProperty ("assets");
+    if (const auto* entries = releaseAssets.getArray())
+        for (const auto& entry : *entries)
+            if (auto* asset = entry.getDynamicObject())
+                if (asset->getProperty ("name").toString() == "SonoRoom-mac.dmg")
+                    assets.push_back ({ "SonoRoom-mac.dmg", "https://github.com/arWai-CW/SonoRoom/releases/download/" + tag + "/SonoRoom-mac.dmg" });
 
-    return std::unique_ptr<VersionInfo> (new VersionInfo ({ versionString, releaseNotes, std::move (parsedAssets) }));
+    return std::unique_ptr<VersionInfo> (new VersionInfo ({ version, details->getProperty ("body").toString(), std::move (assets) }));
 }

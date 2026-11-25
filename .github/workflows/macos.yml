@@ -1,0 +1,70 @@
+name: macOS standalone
+
+on:
+  pull_request:
+  push:
+    branches: ['**']
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-latest
+    outputs:
+      project_version: ${{ steps.build.outputs.project_version }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: Build universal Release
+        id: build
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DUniversalBinary=ON
+          version=$(sed -n 's/^CMAKE_PROJECT_VERSION:STATIC=//p' build/CMakeCache.txt)
+          test -n "$version"
+          printf 'project_version=%s\n' "$version" >> "$GITHUB_OUTPUT"
+          cmake --build build --target SonoBus_Standalone --parallel 3
+      - name: Sign and package
+        run: |
+          app=build/SonoBus_artefacts/Release/Standalone/SonoRoom.app
+          lipo -verify_arch arm64 x86_64 "$app/Contents/MacOS/SonoRoom"
+          codesign --force --deep -s - "$app"
+          codesign --verify --deep --strict "$app"
+          mkdir dist
+          ditto -c -k --keepParent "$app" dist/SonoRoom-mac.zip
+          stage=$(mktemp -d)
+          trap 'rm -rf "$stage"' EXIT
+          ditto "$app" "$stage/SonoRoom.app"
+          ln -s /Applications "$stage/Applications"
+          hdiutil create -srcfolder "$stage" -volname SonoRoom -format UDZO dist/SonoRoom-mac.dmg
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: SonoRoom-mac-universal
+          path: dist/
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check release tag against the app version
+        env:
+          PROJECT_VERSION: ${{ needs.build.outputs.project_version }}
+        run: |
+          if [[ -z "$PROJECT_VERSION" || "$GITHUB_REF_NAME" != "v$PROJECT_VERSION" ]]; then
+            echo "Release tag '$GITHUB_REF_NAME' does not match the built app version 'v$PROJECT_VERSION'. Bump the version in CMakeLists.txt before tagging."
+            exit 1
+          fi
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: SonoRoom-mac-universal
+          path: dist
+      - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
+        with:
+          files: |
+            dist/SonoRoom-mac.zip
+            dist/SonoRoom-mac.dmg
+          fail_on_unmatched_files: true
