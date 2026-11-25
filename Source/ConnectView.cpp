@@ -615,6 +615,8 @@ void ConnectView::updateLayout()
 
     publicServUserBox.items.clear();
     publicServUserBox.flexDirection = FlexBox::Direction::row;
+    publicServUserBox.flexWrap = FlexBox::Wrap::wrap;
+    publicServUserBox.alignContent = FlexBox::AlignContent::flexStart;
     publicServUserBox.items.add(FlexItem(servLabelWidth, minitemheight, *mPublicServerUserStaticLabel).withMargin(2).withFlex(1).withMaxWidth(staticlabelmaxw));
     publicServUserBox.items.add(FlexItem(172, minitemheight, *mPublicServerUsernameEditor).withMargin(2).withFlex(1));
     publicServUserBox.items.add(FlexItem(75, minitemheight, *mLobbySignInButton).withMargin(2));
@@ -622,8 +624,8 @@ void ConnectView::updateLayout()
 
     publicAddGroupBox.items.clear();
     publicAddGroupBox.flexDirection = FlexBox::Direction::row;
-    publicAddGroupBox.items.add(FlexItem(100, minitemheight, *mPublicServerGroupEditor).withMargin(2).withFlex(1));
-    publicAddGroupBox.items.add(FlexItem(100, minitemheight, *mLobbyRoomPasswordEditor).withMargin(2).withFlex(1));
+    publicAddGroupBox.items.add(FlexItem(90, minitemheight, *mPublicServerGroupEditor).withMargin(2).withFlex(1));
+    publicAddGroupBox.items.add(FlexItem(90, minitemheight, *mLobbyRoomPasswordEditor).withMargin(2).withFlex(1));
     publicAddGroupBox.items.add(FlexItem(100, minitemheight, *mPublicServerAddGroupButton).withMargin(2));
 
 
@@ -721,7 +723,21 @@ void ConnectView::resized()  {
 
 
 
-    publicGroupsBox.performLayout(mPublicServerConnectContainer->getLocalBounds());
+    const auto lobbyBounds = mPublicServerConnectContainer->getLocalBounds();
+    for (auto& row : publicGroupsBox.items) {
+        if (row.associatedFlexBox != &publicServUserBox) continue;
+
+        float singleLineWidth = 0;
+        float lineHeight = 0;
+        for (const auto& control : publicServUserBox.items) {
+            singleLineWidth += control.minWidth + control.margin.left + control.margin.right;
+            lineHeight = jmax(lineHeight, control.minHeight + control.margin.top + control.margin.bottom);
+        }
+        const auto rowWidth = jmin(row.maxWidth, lobbyBounds.getWidth() - row.margin.left - row.margin.right);
+        row.minHeight = rowWidth < singleLineWidth ? 2 * lineHeight : lineHeight;
+        break;
+    }
+    publicGroupsBox.performLayout(lobbyBounds);
     //publicGroupsBox.performLayout(mPublicServerConnectContainer->getLocalBounds().withSizeKeepingCentre(jmin(400, mPublicServerConnectContainer->getWidth()), mPublicServerConnectContainer->getHeight()));
 
     mPublicGroupsListBox->setBounds(mPublicGroupComponent->getLocalBounds().reduced(4).withTrimmedTop(10));
