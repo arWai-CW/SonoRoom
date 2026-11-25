@@ -25,11 +25,11 @@ chmod +x ${PREFIX}/share/applications/sonobus.desktop
 mkdir -p ${PREFIX}/share/pixmaps
 cp ../images/sonobus_logo@2x.png ${PREFIX}/share/pixmaps/sonobus.png
 
-if [ -d ${BUILDDIR}/VST3/SonoBus.vst3 ] ; then
+if [ -d ${BUILDDIR}/VST3/SonoRoom.vst3 ] ; then
   mkdir -p ${PREFIX}/lib/vst3
-  cp -a ${BUILDDIR}/VST3/SonoBus.vst3 ${PREFIX}/lib/vst3/
+  cp -a ${BUILDDIR}/VST3/SonoRoom.vst3 ${PREFIX}/lib/vst3/
 
-  echo "SonoBus VST3 plugin installed"
+  echo "SonoRoom VST3 plugin installed"
 fi
 
 if [ -d ${INSTBUILDDIR}/VST3/SonoBusInstrument.vst3 ] ; then
@@ -39,13 +39,12 @@ if [ -d ${INSTBUILDDIR}/VST3/SonoBusInstrument.vst3 ] ; then
   echo "SonoBus VST3i plugin installed"
 fi
 
-if [ -d ${BUILDDIR}/LV2/SonoBus.lv2 ] ; then
+if [ -d ${BUILDDIR}/LV2/SonoRoom.lv2 ] ; then
   mkdir -p ${PREFIX}/lib/lv2
-  cp -a ${BUILDDIR}/LV2/SonoBus.lv2 ${PREFIX}/lib/lv2/
+  cp -a ${BUILDDIR}/LV2/SonoRoom.lv2 ${PREFIX}/lib/lv2/
 
-  echo "SonoBus LV2 plugin installed"
+  echo "SonoRoom LV2 plugin installed"
 fi
 
 
 echo "SonoBus application installed"
-

@@ -29,7 +29,9 @@ rm -f ${PREFIX}/share/applications/sonobus.desktop
 rm -f ${PREFIX}/pixmaps/sonobus.png
 
 rm -rf ${PREFIX}/lib/vst3/SonoBus.vst3
+rm -rf ${PREFIX}/lib/vst3/SonoRoom.vst3
 rm -rf ${PREFIX}/lib/vst3/SonoBusInstrument.vst3
+rm -rf ${PREFIX}/lib/lv2/SonoRoom.lv2
 # remove old VST name
 rm -rf ${PREFIX}/lib/vst3/sonobus.vst3
 
