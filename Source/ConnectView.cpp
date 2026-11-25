@@ -1773,7 +1773,7 @@ bool ConnectView::PublicGroupsListModel::quickMatch()
     const auto currentRoom = parent->processor.getCurrentJoinedGroup();
     for (int row = 0; row < groups.size(); ++row) {
         const auto& room = groups.getReference(row);
-        if (room.groupName != currentRoom && room.activeCount <= MAX_PEERS && room.activeCount > bestCount) {
+        if (room.groupName != currentRoom && room.activeCount < MAX_PEERS && room.activeCount > bestCount) {
             bestRow = row;
             bestCount = room.activeCount;
         }
