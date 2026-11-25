@@ -1,5 +1,7 @@
 
-# SonoBus
+# SonoRoom
+
+SonoRoom is a GPLv3 fork of [SonoBus](https://github.com/sonosaurus/sonobus) by Jesse Chappell and contributors.
 
 SonoBus is an easy to use application for streaming high-quality, low-latency peer-to-peer audio between devices over the internet or a local network.
 
@@ -29,8 +31,15 @@ intercepted, please keep that in mind. All audio is sent directly between users 
 
 # Installing
 
-## Windows and Mac
-There are binary releases for macOS and Windows available at [sonobus.net](https://sonobus.net) or in the releases of this repository on GitHub.
+## Try SonoRoom on Mac
+
+Download `SonoRoom-mac.dmg` or `SonoRoom-mac.zip` from [GitHub Releases](https://github.com/arWai-CW/SonoRoom/releases). Open the DMG or unzip the ZIP, then move `SonoRoom.app` to Applications.
+
+The preview is ad-hoc signed, not notarized by Apple. For the first launch, right-click `SonoRoom.app` in Finder and choose **Open**. If your macOS version still blocks it, go to **System Settings → Privacy & Security** and choose **Open Anyway** for SonoRoom after verifying that you downloaded it from this project's Releases.
+
+For clear bass, start at **48 kHz / 128 samples** in Audio Settings, plug the bass into your interface's **Hi-Z/instrument input** or a **DI box**, and use **wired headphones**. On a stable connection, try 16-bit PCM; if that drops out, try Opus at 96–128 kbps per channel.
+
+Upstream SonoBus builds are still available at [sonobus.net](https://sonobus.net).
 
 ## Linux
 

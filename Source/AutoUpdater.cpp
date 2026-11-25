@@ -62,11 +62,9 @@ void LatestVersionCheckerAndUpdater::run()
     if (info == nullptr)
     {
         if (showAlertWindows)
-            AlertWindow::showMessageBoxAsync (AlertWindow::WarningIcon,
-                                              "Update Server Communication Error",
-                                              "Failed to communicate with the SonoBus update server.\n"
-                                              "Please try again in a few minutes.\n\n"
-                                              "If this problem persists you can download the latest version of SonoBus from sonobus.net");
+            AlertWindow::showMessageBoxAsync (AlertWindow::InfoIcon,
+                                              "SonoRoom Updates",
+                                              "Download new versions from https://github.com/arWai-CW/SonoRoom/releases");
 
         return;
     }

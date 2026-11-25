@@ -145,9 +145,11 @@ function(sono_add_custom_plugin_target target_name product_name formats is_instr
    if (is_instrument)
         set (vst3cats Instrument Network)
         set (vst2cat "kPlugCategSynth")
+        set (bundle_id "com.Sonosaurus.SonoBus")
     else()
         set (vst3cats Fx Network)        
         set (vst2cat "kPlugCategEffect")
+        set (bundle_id "com.arwai.sonoroom")
    endif()
 
     juce_add_plugin("${target_name}"
@@ -156,7 +158,7 @@ function(sono_add_custom_plugin_target target_name product_name formats is_instr
         NEEDS_MIDI_OUTPUT TRUE
         EDITOR_WANTS_KEYBOARD_FOCUS TRUE
         COMPANY_NAME "Sonosaurus"
-        BUNDLE_ID "com.Sonosaurus.SonoBus"
+        BUNDLE_ID "${bundle_id}"
         MICROPHONE_PERMISSION_ENABLED TRUE
         
         ICON_BIG "images/sonobus_icon_mac_1024.png"
@@ -179,7 +181,7 @@ function(sono_add_custom_plugin_target target_name product_name formats is_instr
         PLUGIN_MANUFACTURER_CODE Sono
         PLUGIN_CODE ${plugincode}
         FORMATS ${formats}
-        DESCRIPTION "SonoBus - Network Audio"
+        DESCRIPTION "${product_name} - Network Audio"
         PRODUCT_NAME "${product_name}")
 
     juce_generate_juce_header("${target_name}")
@@ -621,11 +623,10 @@ function(sono_add_custom_plugin_target target_name product_name formats is_instr
 endfunction()
 
 # most of the targets
-sono_add_custom_plugin_target(SonoBus SonoBus "${FormatsToBuild}" FALSE  "NBus")
+sono_add_custom_plugin_target(SonoBus SonoRoom "${FormatsToBuild}" FALSE  "NBus")
 
 # Mobile targets
 #sono_add_custom_plugin_target(SonoBusMobile "AUv3 Standalone" FALSE "NBus")
 
 # add VSTi target
 sono_add_custom_plugin_target(SonoBusInst "SonoBusInstrument" "VST3" TRUE  "IBus")
-
